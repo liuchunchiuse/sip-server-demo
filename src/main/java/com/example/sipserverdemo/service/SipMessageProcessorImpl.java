@@ -179,49 +179,32 @@ public class SipMessageProcessorImpl implements SipMessageProcessor {
         log.info("requestURI====>:{}", request.getRequestURI());
         Response response = null;
         try {
+            /*log.info("创建一个trying响应");
+            response = messageFactory.createResponse(Response.TRYING, request);
+            ToHeader toHeader = (ToHeader) response.getHeader(ToHeader.NAME);
+            toHeader.setTag("4321"); // 设置一个标签
+            //在获得response对象后，我们可以将其发送到网络上。首先，使用SipProvider的getNewServerTransaction()方法获取与此请求对应的服务器事务。在使用该方法时，需要提供接收到的request信息。
+            ServerTransaction serverTransaction = sipProvider.getNewServerTransaction(request);
+            extracted(request, addressFactory, headerFactory, response);
+            // 最后，使用 ServerTransaction 的 sendResponse() 方法将响应发送到网络上。在使用时需要提供要发送的响应。
+            serverTransaction.sendResponse(response);
+            log.info("已发送trying响应");*/
 
             log.info("创建一个ringing响应");
             response = messageFactory.createResponse(Response.RINGING, request);
-
-
             ToHeader toHeader = (ToHeader) response.getHeader(ToHeader.NAME);
             toHeader.setTag("4321"); // 设置一个标签
-
             //在获得response对象后，我们可以将其发送到网络上。首先，使用SipProvider的getNewServerTransaction()方法获取与此请求对应的服务器事务。在使用该方法时，需要提供接收到的request信息。
             ServerTransaction serverTransaction = sipProvider.getNewServerTransaction(request);
             // 最后，使用 ServerTransaction 的 sendResponse() 方法将响应发送到网络上。在使用时需要提供要发送的响应。
             serverTransaction.sendResponse(response);
             log.info("已发送Ringing响应");
+
+
             // 在发送完180/Ringing响应后，接下来要建立200/Ok响应。建立200/Ok响应的方法和180/Ringing响应大致相同。
             response = messageFactory.createResponse(Response.OK, request);
             log.info("创建一个OK响应");
-            // 获得 toHeader 对象
-            toHeader = (ToHeader) response.getHeader(ToHeader.NAME);
-            toHeader.setTag("4321");
-            // Via 头部 - 通常从请求中复制
-            ViaHeader viaHeader = (ViaHeader) request.getHeader(ViaHeader.NAME);
-            response.addHeader(viaHeader);
-
-            // From 头部 - 从请求中复制
-            FromHeader fromHeader = (FromHeader) request.getHeader(FromHeader.NAME);
-            response.addHeader(fromHeader);
-
-            // To 头部 - 从请求中复制并添加标签
-            response.addHeader(toHeader);
-
-            // Call-ID 头部 - 从请求中复制
-            CallIdHeader callIdHeader = (CallIdHeader) request.getHeader(CallIdHeader.NAME);
-            response.addHeader(callIdHeader);
-
-            // CSeq 头部 - 从请求中复制
-            CSeqHeader cSeqHeader = (CSeqHeader) request.getHeader(CSeqHeader.NAME);
-            response.addHeader(cSeqHeader);
-
-            // Contact 头部 - 通常包含 UAS 的 URI
-            SipURI contactURI = addressFactory.createSipURI("SipServer", "47.99.40.56:5060");
-            Address contactAddress = addressFactory.createAddress(contactURI);
-            ContactHeader contactHeader = headerFactory.createContactHeader(contactAddress);
-            response.addHeader(contactHeader);
+            extracted(request, addressFactory, headerFactory, response);
 
 
             //我们使用之前建立的ServerTransaction对象将200/OK消息发送到网络上。
@@ -238,6 +221,58 @@ public class SipMessageProcessorImpl implements SipMessageProcessor {
         } catch (SipException e) {
             throw new RuntimeException(e);
         }
+
+
+    }
+
+    private static void extracted(Request request, AddressFactory addressFactory, HeaderFactory headerFactory, Response response) throws ParseException {
+        ToHeader toHeader;
+        // 获得 toHeader 对象
+        toHeader = (ToHeader) response.getHeader(ToHeader.NAME);
+        toHeader.setTag("4321");
+        // Via 头部 - 通常从请求中复制
+        ViaHeader viaHeader = (ViaHeader) request.getHeader(ViaHeader.NAME);
+        response.addHeader(viaHeader);
+
+        // From 头部 - 从请求中复制
+        FromHeader fromHeader = (FromHeader) request.getHeader(FromHeader.NAME);
+        response.addHeader(fromHeader);
+
+        // To 头部 - 从请求中复制并添加标签
+        response.addHeader(toHeader);
+
+        // Call-ID 头部 - 从请求中复制
+        CallIdHeader callIdHeader = (CallIdHeader) request.getHeader(CallIdHeader.NAME);
+        response.addHeader(callIdHeader);
+
+        // CSeq 头部 - 从请求中复制
+        CSeqHeader cSeqHeader = (CSeqHeader) request.getHeader(CSeqHeader.NAME);
+        response.addHeader(cSeqHeader);
+
+        // Contact 头部 - 通常包含 UAS 的 URI
+
+        // 设置 Contact 头部
+        SipURI contactURI = addressFactory.createSipURI("user", "47.99.40.56:5060");
+        contactURI.setTransportParam("udp");
+        Address contactAddress = addressFactory.createAddress(contactURI);
+        ContactHeader contactHeader = headerFactory.createContactHeader(contactAddress);
+        response.addHeader(contactHeader);
+
+
+        // 构造 SDP 数据
+        String sdpData = "v=0\r\n"
+                + "o=- 12345 67890 IN IP4 47.99.40.56\r\n" // 根据需要替换 IP 和其他 SDP 参数
+                + "s=-\r\n"
+                + "c=IN IP4 47.99.40.56\r\n"
+                + "t=0 0\r\n"
+                + "m=audio 49170 RTP/AVP 0 8 101\r\n"
+                + "a=rtpmap:0 PCMU/8000\r\n"
+                + "a=rtpmap:8 PCMA/8000\r\n"
+                + "a=rtpmap:101 telephone-event/8000\r\n"
+                + "a=sendrecv\r\n";
+
+        ContentTypeHeader contentTypeHeader = headerFactory.createContentTypeHeader("application", "sdp");
+        response.setContent(sdpData, contentTypeHeader);
 
 
     }
@@ -261,6 +296,9 @@ public class SipMessageProcessorImpl implements SipMessageProcessor {
     }
 
     private void doRequestAsk(RequestEvent requestEvent, AddressFactory addressFactory, MessageFactory messageFactory, HeaderFactory headerFactory, SipProvider sipProvider) {
+        log.info("进入Ack处理");
+
+
     }
 
     private void doRequestRegister(RequestEvent requestEvent, AddressFactory addressFactory, MessageFactory messageFactory, HeaderFactory headerFactory, SipProvider sipProvider) {
