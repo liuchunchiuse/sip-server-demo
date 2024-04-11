@@ -198,6 +198,32 @@ public class SipMessageProcessorImpl implements SipMessageProcessor {
             // 获得 toHeader 对象
             toHeader = (ToHeader) response.getHeader(ToHeader.NAME);
             toHeader.setTag("4321");
+            // Via 头部 - 通常从请求中复制
+            ViaHeader viaHeader = (ViaHeader) request.getHeader(ViaHeader.NAME);
+            response.addHeader(viaHeader);
+
+            // From 头部 - 从请求中复制
+            FromHeader fromHeader = (FromHeader) request.getHeader(FromHeader.NAME);
+            response.addHeader(fromHeader);
+
+            // To 头部 - 从请求中复制并添加标签
+            response.addHeader(toHeader);
+
+            // Call-ID 头部 - 从请求中复制
+            CallIdHeader callIdHeader = (CallIdHeader) request.getHeader(CallIdHeader.NAME);
+            response.addHeader(callIdHeader);
+
+            // CSeq 头部 - 从请求中复制
+            CSeqHeader cSeqHeader = (CSeqHeader) request.getHeader(CSeqHeader.NAME);
+            response.addHeader(cSeqHeader);
+
+            // Contact 头部 - 通常包含 UAS 的 URI
+            SipURI contactURI = addressFactory.createSipURI("SipServer", "47.99.40.56:5060");
+            Address contactAddress = addressFactory.createAddress(contactURI);
+            ContactHeader contactHeader = headerFactory.createContactHeader(contactAddress);
+            response.addHeader(contactHeader);
+
+
             //我们使用之前建立的ServerTransaction对象将200/OK消息发送到网络上。
             log.info("发送OK的serverTransaction:{}", serverTransaction);
             serverTransaction.sendResponse(response);
