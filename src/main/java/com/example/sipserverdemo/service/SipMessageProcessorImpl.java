@@ -2,6 +2,7 @@ package com.example.sipserverdemo.service;
 
 import cn.hutool.json.JSONUtil;
 import com.example.sipserverdemo.util.MD5Util;
+import com.sun.media.rtp.RTPTransmitter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -10,6 +11,15 @@ import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import javax.media.Manager;
+import javax.media.MediaLocator;
+import javax.media.NoDataSourceException;
+import javax.media.format.UnsupportedFormatException;
+import javax.media.protocol.DataSource;
+import javax.media.rtp.InvalidSessionAddressException;
+import javax.media.rtp.RTPManager;
+import javax.media.rtp.SendStream;
+import javax.media.rtp.SessionAddress;
 import javax.sip.*;
 import javax.sip.address.Address;
 import javax.sip.address.AddressFactory;
@@ -19,6 +29,12 @@ import javax.sip.header.*;
 import javax.sip.message.MessageFactory;
 import javax.sip.message.Request;
 import javax.sip.message.Response;
+import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.SourceDataLine;
+import javax.sound.sampled.TargetDataLine;
+import java.io.IOException;
+import java.net.InetAddress;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -295,9 +311,59 @@ public class SipMessageProcessorImpl implements SipMessageProcessor {
     private void doResponseBye(ResponseEvent responseEvent, AddressFactory addressFactory, MessageFactory messageFactory, HeaderFactory headerFactory, SipProvider sipProvider, Response response) {
     }
 
-    private void doRequestAsk(RequestEvent requestEvent, AddressFactory addressFactory, MessageFactory messageFactory, HeaderFactory headerFactory, SipProvider sipProvider) {
-        log.info("进入Ack处理");
+    private RTPManager rtpManager;
+    private MediaLocator mediaLocator;
+    private DataSource dataSource;
 
+    private void doRequestAsk(RequestEvent requestEvent, AddressFactory addressFactory, MessageFactory messageFactory, HeaderFactory headerFactory, SipProvider sipProvider) {
+        String wavFilePath = "path/to/your/file.wav"; // WAV文件路径
+       /* AudioFormat audioFormat = new AudioFormat(sampleRate, 16, channels, true, false);
+        RTPTransmitter transmitter = null;
+        SourceDataLine sourceDataLine = null;
+
+        try {
+            // 创建RTP会话
+            RTPSession session = SessionManager.createSession(payloadType, sampleRate, channels, bufferSize);
+            transmitter = (RTPTransmitter) session.createTransmitter();
+
+            // 打开目标数据线路以读取音频数据
+            TargetDataLine targetDataLine = AudioSystem.getTargetDataLine(audioFormat);
+            targetDataLine.open(audioFormat);
+            targetDataLine.start();
+
+            // 创建源数据线路以写入RTP包
+            sourceDataLine = AudioSystem.getSourceDataLine(audioFormat);
+            sourceDataLine.open(audioFormat);
+            sourceDataLine.start();
+
+            // 将目标数据线路的数据读入缓冲区，并通过RTP会话发送
+            byte[] buffer = new byte[bufferSize];
+            int numBytesRead;
+            while ((numBytesRead = targetDataLine.read(buffer, 0, buffer.length)) != -1) {
+                LocalSample sample = new LocalSample(buffer, 0, numBytesRead, sampleRate, payloadType, channels, frameSize, 0);
+                transmitter.transmit(sample);
+                sourceDataLine.write(buffer, 0, numBytesRead);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            if (transmitter != null) {
+                try {
+                    transmitter.stop();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+            if (sourceDataLine != null) {
+                sourceDataLine.stop();
+                sourceDataLine.close();
+            }
+            if (targetDataLine != null) {
+                targetDataLine.stop();
+                targetDataLine.close();
+            }
+        }
+*/
 
     }
 
